@@ -5,10 +5,7 @@ include $(CLEAR_VARS)
 # Source - https://github.com/desktop-app/MicroTeX/tree/2b3141caa9b9c8f1142d269b79eb4dca5940e57a
 LOCAL_MODULE := libclatexmath
 
-# MEM_CHECK is for compiling with empty graphics backend
-# -DHAVE_LOG=OFF
-# -DGRAPHICS_DEBUG=ON
-LOCAL_CFLAGS = $(APP_CFLAGS) -frtti -DMEM_CHECK=OFF -DHAVE_LOG=OFF
+LOCAL_CFLAGS = $(APP_CFLAGS) -frtti
 LOCAL_CPP_FEATURES += exceptions
 
 LOCAL_C_INCLUDES := \
