@@ -30,7 +30,7 @@ inline std::string tostring(wchar_t val) {
   char buf[16];
   // -1 for a character the current locale cannot represent; feeding it to
   // the string constructor as a length would ask for size_t(-1) bytes.
-  const auto len = wctomb(buf, val);
+  const auto len = wcrtomb(buf, val, NULL);
   return (len > 0) ? std::string(buf, len) : std::string("?");
 }
 
