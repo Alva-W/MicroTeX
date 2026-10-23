@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <stack>
+#include <vector>
 
 #include "common.h"
 #include "fonts/fonts.h"
@@ -29,9 +30,10 @@ public:
   };
 
 private:
-  static float canBreak(std::stack<Position>& stack, const sptr<HBox>& hbox, float width);
+  static float canBreak(std::stack<Position>& stack, const sptr<HBox>& hbox, float width,
+                        const std::vector<int>* breakPositions);
 
-  static int getBreakPosition(const sptr<HBox>& hb, int index);
+  static int getBreakPosition(const std::vector<int>& breakPositions, int index);
 
 public:
   static sptr<Box> split(const sptr<Box>& box, float width, float lineSpace);

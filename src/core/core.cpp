@@ -7,6 +7,34 @@
 using namespace std;
 using namespace tex;
 
+namespace {
+
+constexpr float kMinTailWidthRatio = 0.10f;
+
+vector<int> filterShortTailBreaks(const sptr<HBox>& hb, float width) {
+  if (!(width > 0) || width == POS_INF || hb->_breakPositions.empty()) {
+    return hb->_breakPositions;
+  }
+
+  const int count = hb->_children.size();
+  vector<float> suffixWidth(count + 1, 0.f);
+  for (int i = count - 1; i >= 0; --i) {
+    suffixWidth[i] = suffixWidth[i + 1] + hb->_children[i]->_width;
+  }
+
+  const float minTailWidth = width * kMinTailWidthRatio;
+  vector<int> result;
+  result.reserve(hb->_breakPositions.size());
+  for (int pos : hb->_breakPositions) {
+    if (pos >= 0 && pos <= count && suffixWidth[pos] >= minTailWidth) {
+      result.push_back(pos);
+    }
+  }
+  return result;
+}
+
+}  // namespace
+
 #ifdef HAVE_LOG
 
 void print_box(const sptr<Box>& b, int dep, vector<bool>& lines) {
@@ -91,7 +119,10 @@ sptr<Box> BoxSplitter::split(const sptr<HBox>& hb, float width, float lineSpace)
   stack<Position> positions;
   sptr<HBox> hbox = hb;
 
-  while (hbox->_width > width && canBreak(positions, hbox, width) != hbox->_width) {
+  auto breakPositions = filterShortTailBreaks(hbox, width);
+
+  while (hbox->_width > width
+         && canBreak(positions, hbox, width, &breakPositions) != hbox->_width) {
     Position pos = positions.top();
     positions.pop();
     auto hboxes = pos._box->split(pos._index - 1);
@@ -108,6 +139,7 @@ sptr<Box> BoxSplitter::split(const sptr<HBox>& hb, float width, float lineSpace)
     }
     vbox->add(first, lineSpace);
     hbox = second;
+    breakPositions = filterShortTailBreaks(hbox, width);
   }
 
   if (second != nullptr) {
@@ -118,9 +150,13 @@ sptr<Box> BoxSplitter::split(const sptr<HBox>& hb, float width, float lineSpace)
   return hbox;
 }
 
-float BoxSplitter::canBreak(stack<Position>& s, const sptr<HBox>& hbox, const float width) {
+float BoxSplitter::canBreak(stack<Position>& s, const sptr<HBox>& hbox,
+                            const float width, const vector<int>* breakPositions) {
   const vector<sptr<Box>>& children = hbox->_children;
   const int count = children.size();
+  const vector<int>& breaks = (
+    breakPositions == nullptr ? hbox->_breakPositions : *breakPositions
+  );
   // Cumulative width
   auto* cumWidth = new float[count + 1]();
   cumWidth[0] = 0;
@@ -128,11 +164,11 @@ float BoxSplitter::canBreak(stack<Position>& s, const sptr<HBox>& hbox, const fl
     auto box = children[i];
     cumWidth[i + 1] = cumWidth[i] + box->_width;
     if (cumWidth[i + 1] <= width) continue;
-    int pos = getBreakPosition(hbox, i);
+    int pos = getBreakPosition(breaks, i);
     auto h = dynamic_pointer_cast<HBox>(box);
     if (h != nullptr) {
       stack<Position> sub;
-      float w = canBreak(sub, h, width - cumWidth[i]);
+      float w = canBreak(sub, h, width - cumWidth[i], nullptr);
       if (w != box->_width && (cumWidth[i] + w <= width || pos == -1)) {
         s.push(Position(i - 1, hbox));
         // add to stack
@@ -161,21 +197,21 @@ float BoxSplitter::canBreak(stack<Position>& s, const sptr<HBox>& hbox, const fl
   return hbox->_width;
 }
 
-int BoxSplitter::getBreakPosition(const sptr<HBox>& hb, int i) {
-  if (hb->_breakPositions.empty()) return -1;
+int BoxSplitter::getBreakPosition(const vector<int>& breakPositions, int i) {
+  if (breakPositions.empty()) return -1;
 
-  if (hb->_breakPositions.size() == 1 && hb->_breakPositions[0] <= i)
-    return hb->_breakPositions[0];
+  if (breakPositions.size() == 1 && breakPositions[0] <= i)
+    return breakPositions[0];
 
   size_t pos = 0;
-  for (; pos < hb->_breakPositions.size(); pos++) {
-    if (hb->_breakPositions[pos] > i) {
+  for (; pos < breakPositions.size(); pos++) {
+    if (breakPositions[pos] > i) {
       if (pos == 0) return -1;
-      return hb->_breakPositions[pos - 1];
+      return breakPositions[pos - 1];
     }
   }
 
-  return hb->_breakPositions[pos - 1];
+  return breakPositions[pos - 1];
 }
 
 /************************************* Environment implementation ******************************/
