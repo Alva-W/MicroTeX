@@ -233,13 +233,8 @@ sptr<Box> RowAtom::createBox(Environment& env) {
     }
 
     if (_breakable) {
-      if (_breakEveywhere) {
+      if (_breakEveywhere || markAdded) {
         hbox->addBreakPosition(hbox->_children.size());
-      } else {
-        auto ca = dynamic_cast<CharAtom*>(at.get());
-        if (markAdded || (ca != nullptr && isAsciiDigit(ca->getCharacter()))) {
-          hbox->addBreakPosition(hbox->_children.size());
-        }
       }
     }
 
@@ -250,6 +245,17 @@ sptr<Box> RowAtom::createBox(Environment& env) {
 
     // insert kerning
     if (abs(kern) > PREC) hbox->add(sptrOf<StrutBox>(kern, 0.f, 0.f, 0.f));
+
+    if (_breakable && !_breakEveywhere && i < end) {
+      const AtomType type = atom->rightType();
+      if (type == AtomType::binaryOperator || type == AtomType::relation) {
+        const bool followedByBreak = dynamic_cast<BreakMarkAtom*>(nextAtom.get()) != nullptr;
+        const bool followedByRel = nextAtom != nullptr && nextAtom->leftType() == AtomType::relation;
+        if (!followedByBreak && !(type == AtomType::relation && followedByRel)) {
+          hbox->addBreakPosition(hbox->_children.size());
+        }
+      }
+    }
 
     // kerning do not interfere with the normal glue-rules without kerning
     if (!atom->isKern()) _previousAtom = atom;
