@@ -232,7 +232,7 @@ sptr<Box> RowAtom::createBox(Environment& env) {
       cb->addItalicCorrectionToWidth();
     }
 
-    if (_breakable) {
+    if (_breakable && env.isBreakable()) {
       if (_breakEveywhere || markAdded) {
         hbox->addBreakPosition(hbox->_children.size());
       }
@@ -246,7 +246,7 @@ sptr<Box> RowAtom::createBox(Environment& env) {
     // insert kerning
     if (abs(kern) > PREC) hbox->add(sptrOf<StrutBox>(kern, 0.f, 0.f, 0.f));
 
-    if (_breakable && !_breakEveywhere && i < end) {
+    if (_breakable && env.isBreakable() && !_breakEveywhere && i < end) {
       const AtomType type = atom->rightType();
       if (type == AtomType::binaryOperator || type == AtomType::relation) {
         const bool followedByBreak = dynamic_cast<BreakMarkAtom*>(nextAtom.get()) != nullptr;

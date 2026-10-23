@@ -54,6 +54,7 @@ private:
   int _lastFontId{};
   // Environment width
   float _textWidth{};
+  bool _breakable{true};
 
   // The text style to use
   std::string _textStyle;
@@ -73,6 +74,7 @@ private:
     _style = TexStyle::display;
     _lastFontId = TeXFont::NO_FONT;
     _textWidth = POS_INF;
+    _breakable = true;
     _smallCap = false;
     _scaleFactor = 1.f;
     _interlineUnit = UnitType::em;
@@ -155,6 +157,8 @@ public:
   inline float getSize() const { return _tf->getSize(); }
 
   inline TexStyle getStyle() const { return _style; }
+
+  inline bool isBreakable() const { return _breakable; }
 
   inline void setStyle(TexStyle style) { _style = style; }
 

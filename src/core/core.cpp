@@ -198,6 +198,7 @@ void Environment::setTextWidth(UnitType wu, float w) {
 
 sptr<Environment>& Environment::copy() {
   Environment* t = new Environment(_style, _scaleFactor, _tf, _textStyle, _smallCap);
+  t->_breakable = _breakable;
   _copy = sptr<Environment>(t);
   return _copy;
 }
@@ -205,6 +206,7 @@ sptr<Environment>& Environment::copy() {
 sptr<Environment>& Environment::copy(const sptr<TeXFont>& tf) {
   Environment* te = new Environment(_style, _scaleFactor, tf, _textStyle, _smallCap);
   te->_textWidth = _textWidth;
+  te->_breakable = _breakable;
   te->_interline = _interline;
   te->_interlineUnit = _interlineUnit;
   _copytf = sptr<Environment>(te);
@@ -213,6 +215,7 @@ sptr<Environment>& Environment::copy(const sptr<TeXFont>& tf) {
 
 sptr<Environment>& Environment::crampStyle() {
   Environment* t = new Environment(_style, _scaleFactor, _tf, _textStyle, _smallCap);
+  t->_breakable = _breakable;
   _cramp = sptr<Environment>(t);
   const i8 style = static_cast<i8>(_style);
   _cramp->_style = static_cast<TexStyle>(style % 2 == 1 ? style : style + 1);
@@ -221,6 +224,7 @@ sptr<Environment>& Environment::crampStyle() {
 
 sptr<Environment>& Environment::dnomStyle() {
   Environment* t = new Environment(_style, _scaleFactor, _tf, _textStyle, _smallCap);
+  t->_breakable = false;
   _dnom = sptr<Environment>(t);
   const i8 style = static_cast<i8>(_style);
   _dnom->_style = static_cast<TexStyle>(2 * (style / 2) + 1 + 2 - 2 * (style / 6));
@@ -229,6 +233,7 @@ sptr<Environment>& Environment::dnomStyle() {
 
 sptr<Environment>& Environment::numStyle() {
   Environment* t = new Environment(_style, _scaleFactor, _tf, _textStyle, _smallCap);
+  t->_breakable = false;
   _num = sptr<Environment>(t);
   const i8 style = static_cast<i8>(_style);
   _num->_style = static_cast<TexStyle>(style + 2 - 2 * (style / 6));
@@ -237,6 +242,7 @@ sptr<Environment>& Environment::numStyle() {
 
 sptr<Environment>& Environment::rootStyle() {
   Environment* t = new Environment(_style, _scaleFactor, _tf, _textStyle, _smallCap);
+  t->_breakable = false;
   _root = sptr<Environment>(t);
   _root->_style = TexStyle::scriptScript;
   return _root;
@@ -244,6 +250,7 @@ sptr<Environment>& Environment::rootStyle() {
 
 sptr<Environment>& Environment::subStyle() {
   Environment* t = new Environment(_style, _scaleFactor, _tf, _textStyle, _smallCap);
+  t->_breakable = false;
   _sub = sptr<Environment>(t);
   const i8 style = static_cast<i8>(_style);
   _sub->_style = static_cast<TexStyle>(2 * (style / 4) + 4 + 1);
@@ -252,6 +259,7 @@ sptr<Environment>& Environment::subStyle() {
 
 sptr<Environment>& Environment::supStyle() {
   Environment* t = new Environment(_style, _scaleFactor, _tf, _textStyle, _smallCap);
+  t->_breakable = false;
   _sup = sptr<Environment>(t);
   const i8 style = static_cast<i8>(_style);
   _sup->_style = static_cast<TexStyle>(2 * (style / 4) + 4 + (style % 2));
