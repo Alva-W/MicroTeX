@@ -16,6 +16,14 @@ inline bool inTypeSet(const bitset<16>& set, AtomType type) {
   const int i = static_cast<i8>(type);
   return i >= 0 && i < 16 && set[i];
 }
+
+//Supports normal ',', \comma, and comma wrapped in TypedAtom such as \mathpunct{,}.
+inline bool isCommaAtom(const sptr<Atom>& atom) {
+  auto* sym = dynamic_cast<SymbolAtom*>(atom.get());
+  if (sym != nullptr) return sym->getName() == "comma";
+  auto* typed = dynamic_cast<TypedAtom*>(atom.get());
+  return typed != nullptr && isCommaAtom(typed->getBase());
+}
 }  // namespace
 
 inline bool Dummy::isCharSymbol() const {
@@ -248,10 +256,22 @@ sptr<Box> RowAtom::createBox(Environment& env) {
 
     if (_breakable && env.isBreakable() && !_breakEveywhere && i < end) {
       const AtomType type = atom->rightType();
-      if (type == AtomType::binaryOperator || type == AtomType::relation) {
+      const bool is_comma = isCommaAtom(at);
+      if (type == AtomType::binaryOperator || type == AtomType::relation || is_comma) {
+        bool followedByRel = false;
+        bool followedByClosing = false;
+        bool followedByPunct = false;
         const bool followedByBreak = dynamic_cast<BreakMarkAtom*>(nextAtom.get()) != nullptr;
-        const bool followedByRel = nextAtom != nullptr && nextAtom->leftType() == AtomType::relation;
-        if (!followedByBreak && !(type == AtomType::relation && followedByRel)) {
+        if (nextAtom != nullptr) {
+            const AtomType next_type = nextAtom->leftType();
+            followedByRel     = next_type == AtomType::relation;
+            followedByClosing = next_type == AtomType::closing;
+            followedByPunct   = next_type == AtomType::punctuation;
+        }
+        // maybe add protection for commas in numbers?
+        if (!followedByBreak
+            && !(type == AtomType::relation && followedByRel)
+            && !(is_comma && (followedByClosing || followedByPunct))) {
           hbox->addBreakPosition(hbox->_children.size());
         }
       }
